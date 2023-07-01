@@ -79,6 +79,52 @@ router.post('/login',async (req,res)=>{
 
 
 
+// get user cart 
+router.get('/cart/:id',async(req,res)=>{
+    try {
+        const id = req.params.id;
+        const user = await User.findById(id);
+        const cart = user.cart;
+        res.status(200).json({"cart":cart});
+    } catch (err){
+        res.status(400).json({"status":"Bad Request","error":err.message});
+    }
+});
+
+
+// add to cart
+router.post('/addToCart/:id',async(req,res)=>{
+    try {
+        const {title,description,price,brand,category,gender}=req.body;
+        const id = req.params.id;
+        const user = await User.findById(id);
+        user.cart.push({title,description,price,brand,category,gender});
+        user.save();
+        const cart = user.cart;
+        res.status(200).json({"Cart":cart});
+    }
+    catch(err){
+        res.status(400).json({"status":"Bad Request","error":err.message});
+    }
+});
+
+// delete item from cart 
+router.delete('/deleteCartItem/:userId/:cartId',async(req,res)=>{
+    try {
+        const cartId=req.params.cartId;
+        const userId=req.params.userId;
+        const user = await User.findById(userId);
+        user.cart.pull({_id:cartId});
+        user.save();
+        const cart = user.cart;
+        res.status(200).json({"Cart":cart});
+    }
+    catch(err){
+        res.status(400).json({"status":"Bad Request","error":err.message});
+    }
+});
+
+
 
 
 module.exports = router;

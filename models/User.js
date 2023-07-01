@@ -21,9 +21,17 @@ const UserSchema = new Schema({
             price:Number,
             brand:String,
             category:String,
-            gender:String,  
+            gender:String, 
+            quantity:{
+                type:Number,
+                default:1,   
+            },
+            image:String
         }
-    ]
+    ],
+    cartPrice:{
+        type:Number
+    }
 });
 
 module.exports = mongoose.model('Users',UserSchema);
