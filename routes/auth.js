@@ -6,7 +6,8 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = "ShhhhSecret";
 
 // mongoose models
-const User = require('../models/User')
+const User = require('../models/User');
+const fetchUser = require('../middleware/fetchUser');
 
 // user signup route 
 router.post('/signup', async (req, res) => {
@@ -80,12 +81,12 @@ router.post('/login',async (req,res)=>{
 
 
 // get user cart 
-router.get('/cart/:id',async(req,res)=>{
+router.get('/cart', fetchUser, async(req,res)=>{
     try {
-        const id = req.params.id;
+        const id = req.user.id;
         const user = await User.findById(id);
         const cart = user.cart;
-        res.status(200).json({"cart":cart});
+        res.status(200).json(cart);
     } catch (err){
         res.status(400).json({"status":"Bad Request","error":err.message});
     }
@@ -93,32 +94,76 @@ router.get('/cart/:id',async(req,res)=>{
 
 
 // add to cart
-router.post('/addToCart/:id',async(req,res)=>{
+router.post('/addToCart',fetchUser,async(req,res)=>{
     try {
-        const {title,description,price,brand,category,gender}=req.body;
-        const id = req.params.id;
+        const {title,description,price,brand,category,gender,image}=req.body;
+        const id = req.user.id;
         const user = await User.findById(id);
-        user.cart.push({title,description,price,brand,category,gender});
-        user.save();
-        const cart = user.cart;
-        res.status(200).json({"Cart":cart});
-    }
+        let cart = user.cart;
+        let c=0;
+        let dId,q;
+        cart.map((ele)=>{
+            if(ele.title===title && ele.description===description){
+                c+=1; dId=ele._id.toString();q=ele.quantity;
+            }
+            if(c>0) return;
+        })
+        console.log("ji")
+        console.log(c,dId,q);
+        if(c>0)
+        {
+            user.cart = cart.map((ele)=>{
+                if(ele.title===title && ele.description===description){
+                    ele.quantity+=1;
+                    console.log(ele.quantity);
+                }
+                return ele;
+            });
+            console.log('lopala')
+        }
+        else{
+            user.cart.push({title,description,price,brand,category,gender,totalPrice:price,image});
+        }
+        user.save(); 
+        cart = user.cart;
+        res.status(200).json(cart);
+    } 
     catch(err){
         res.status(400).json({"status":"Bad Request","error":err.message});
     }
 });
 
 // delete item from cart 
-router.delete('/deleteCartItem/:userId/:cartId',async(req,res)=>{
+router.delete('/deleteCartItem/:cartId',fetchUser,async(req,res)=>{
     try {
         const cartId=req.params.cartId;
-        const userId=req.params.userId;
+        const userId=req.user.id;
         const user = await User.findById(userId);
-        user.cart.pull({_id:cartId});
+        const resp = user.cart;
+        
+        let c=0;
+        resp.map((ele)=>{
+            if(ele._id.toString()===cartId){
+                c=ele.quantity;
+            }
+        });
+        console.log(c)
+        if(c==1) user.cart.pull({_id:cartId});
+        else{
+            user.cart = resp.map((ele)=>{
+                if(ele._id.toString()===cartId){
+                    console.log(ele.quantity)
+                    ele.quantity-=1;
+                    console.log(ele.quantity)
+                }
+                return ele;
+            })
+        }
+        console.log(user.cart)
         user.save();
         const cart = user.cart;
-        res.status(200).json({"Cart":cart});
-    }
+        res.status(200).json(cart);
+    }   
     catch(err){
         res.status(400).json({"status":"Bad Request","error":err.message});
     }

@@ -26,12 +26,10 @@ const UserSchema = new Schema({
                 type:Number,
                 default:1,   
             },
-            image:String
+            image:String,
+            totalPrice:Number
         }
-    ],
-    cartPrice:{
-        type:Number
-    }
+    ]
 });
 
 module.exports = mongoose.model('Users',UserSchema);
